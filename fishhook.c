@@ -35,6 +35,7 @@
 #include <mach-o/dyld.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
+#include <ptrauth.h>
 
 #ifdef __LP64__
 typedef struct mach_header_64 mach_header_t;
@@ -134,7 +135,11 @@ static void perform_rebinding_with_section(struct rebindings_entry *rebindings,
               indirect_symbol_bindings[i] != cur->rebindings[j].replacement) {
             *(cur->rebindings[j].replaced) = indirect_symbol_bindings[i];
           }
+#if __arm64e__
+          indirect_symbol_bindings[i] = ptrauth_sign_unauthenticated((void *)cur->rebindings[j].replacement, ptrauth_key_asia, &indirect_symbol_bindings[i]);
+#else
           indirect_symbol_bindings[i] = cur->rebindings[j].replacement;
+#endif
           goto symbol_loop;
         }
       }
